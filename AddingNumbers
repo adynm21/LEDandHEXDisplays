@@ -1,0 +1,166 @@
+//PART I
+//Displaying the digits 1-9 on the Hex Display.
+
+module lab4part1(SW, HEX1, HEX0);
+    //converting two 4 bit inputs to a hex display//
+	 input [0:9]SW;
+	 output [6:0]HEX1, HEX0;
+	 
+	 char_7seg hex0(SW[3:0], HEX0);
+	 char_7seg hex1(SW[7:4], HEX1);
+endmodule
+
+module char_7seg(C, Display);
+    input [3:0]C;
+	 output [6:0]Display;
+	 
+	 assign Display[6] = (~C[1]&C[2]&~C[3])|(C[0]&~C[1]&~C[3])|(C[0]&C[2]&~C[3]);
+	 assign Display[5] = (C[1]&~C[2]&~C[3])|(C[0]&~C[2]&~C[3])|(C[0]&C[1]&~C[2]);
+	 assign Display[4] = (~C[1]&C[2]&~C[3])|(C[0]&~C[2]&~C[3]);
+	 assign Display[3] = (~C[1]&~C[3])|(C[0]&C[1]&C[2]&~C[3]);
+	 assign Display[2] = (~C[3]&~C[2]&C[1]&~C[0]);
+	 assign Display[1] = (~C[3]&C[2]&~C[1]&C[0])|(~C[3]&C[2]&C[1]&~C[0]); 
+	 assign Display[0] = (~C[3]&~C[1]);
+endmodule
+
+//PART II
+//Displaying four digit binary numbers as 2 digit decimal numbers on the hex display.
+
+module lab4part2(SW, HEX1, HEX0);
+	input [3:0]SW;
+	output [6:0]HEX1, HEX0;
+	
+	wire [3:0]Z,A,G;
+	
+	comparator CZ(SW, Z);
+	a_circuit CA(SW, A);
+	mux_4bit_2to1 MU(Z,SW,A,G);
+	char_7seg H1(Z, HEX1);
+	char_7seg H0(G, HEX0);
+endmodule
+
+module mux_4bit_2to1(Z,V,A,M);
+	input [3:0]Z;
+	input [3:0]V,A;
+	output [3:0]M;
+	
+	assign M[3:0] = (~Z[0]&V[3:0])|(Z[0]&A[3:0]);
+endmodule
+	
+module comparator(V,Z);
+    input [3:0]V;
+	 output [3:0]Z;
+	 
+	 assign Z[3:1] = 0;
+	 assign Z[0] = (V[3]&V[1])|(V[3]&V[2]);
+endmodule
+
+module a_circuit(S,A);
+	input [3:0]S;
+	output [3:0]A;
+
+	assign A[3] = 0;
+	assign A[2] = (S[3]&S[2]&S[1]);
+	assign A[1] = (S[3]&S[2]&~S[1]);
+	assign A[0] = (S[3]&S[1]&S[0])|(S[0]&S[2]&S[3]);
+endmodule
+
+module char_7seg(C, Display);
+   input [3:0]C;
+	output [6:0]Display;
+	 
+	assign Display[6] = (~C[1]&C[2]&~C[3])|(C[0]&~C[1]&~C[3])|(C[0]&C[2]&~C[3]);
+	assign Display[5] = (C[1]&~C[2]&~C[3])|(C[0]&~C[2]&~C[3])|(C[0]&C[1]&~C[2]);
+	assign Display[4] = (~C[1]&C[2]&~C[3])|(C[0]&~C[2]&~C[3]);
+	assign Display[3] = (~C[1]&~C[3])|(C[0]&C[1]&C[2]&~C[3]);
+	assign Display[2] = (~C[3]&~C[2]&C[1]&~C[0]);
+	assign Display[1] = (~C[3]&C[2]&~C[1]&C[0])|(~C[3]&C[2]&C[1]&~C[0]); 
+	assign Display[0] = (~C[3]&~C[1]);
+endmodule
+
+//PART III
+//Building a ripple carry adder and outputting results to the LEDs.
+
+module lab4part3(SW,LEDR);
+	input [8:0]SW;
+	output [4:0]LEDR;
+
+	wire(c1,c2,c3);
+
+	fulladder FA0(SW[0],SW[4],SW[8],c1,LEDR[0]);
+	fulladder FA1(SW[1],SW[5],c1,c2,LEDR[1]);
+	fulladder FA2(SW[2],SW[6],c2,c3,LEDR[2]);
+	fulladder FA3(SW[3],SW[7],c3,LEDR[4],LEDR[3]);
+endmodule
+
+module fulladder(b,a,ci,co,s);
+	input b,a,ci;
+	output co,s;
+
+	assign co = (a&ci)|(b&ci)|(b&a);
+	assign s = (~b&~a&ci)|(b&~a&~ci)|(~b&a&~ci)|(b&a&ci);
+endmodule
+
+//PART IV
+//Adding two BCD digits and displaying the result on the hex display, with the second method using comparators to rely
+//more heavily on Verilog creating the circuit.
+
+module lab4part4(SW,LEDR,HEX5,HEX3,HEX1,HEX0);
+	input [8:0]SW;
+	output [9:0]LEDR;
+	output [6:0]HEX5,HEX3,HEX1,HEX0;
+
+	wire [4:0]V;
+	wire [3:0]Z,A,G
+	wire c1,c2,c3,E;
+	
+	fulladder FA0(SW[0],SW[4],SW[8],c1,V[0]);
+	fulladder FA1(SW[1],SW[5],c1,c2,V[1]);
+	fulladder FA2(SW[2],SW[6],c2,c3,V[2]);
+	fulladder FA3(SW[3],SW[7],c3,V[4],V[3]);
+
+	assign LEDR[4:0] = V[4:0];
+	error E1(V,E);	
+	assign LEDR[9] = E;
+
+	comparator_5bit C5(V,Z);
+	a_circuit_5bit A5(V,A);
+	mux_4bit_2to1 M4(Z,V,A,G);
+	dig_7seg H1(Z,HEX1);
+	dig_7seg H0(G,Hex0);
+	
+endmodule
+
+module comparator_5bit(V,Z);
+	input [4:0]V;
+	output [3:0]Z;
+	
+	assign Z[3:1] = 0;
+	assign Z[0] = (~V[4]&V[3]&V[1])|(~V[4]&V[3]&V[2])|(V[4]&~V[3]&~V[2]);
+endmodule
+
+module a_circuit_5bit(V,A);
+	input [4:0]V;
+	output [3:0]A;
+
+	assign A[3] = (V[4]&~V[3]&~V[2]&V[1]);
+	assign A[2] = (~V[4]&V[3]&V[2]&V[1])|(V[4]&~V[3]&~V[2]&~V[1]);
+	assign A[1] = (~V[4]&V[3]&V[2]&~V[1])|(V[4]&~V[3]&~V[2]&~V[1]);
+	assign A[0] = (~V[4]&V[3]&V[1]&V[0])|(V[4]&V[3]&V[2]&V[0])|(V[4]&~V[3]&~V[2]&V[0]);
+
+endmodule
+
+module mux_4bit_2to1(S,V,A,M);
+	input [3:0]Z,A;
+	input [4:0]V;
+	output [3:0]M;
+	
+	assign M[3:0] = (~Z[0]&V[3:0])|(Z[0]&A[3:0]);
+endmodule
+
+module error(V,E);
+	input [4:0]V;
+	output E;
+
+	assign E = ~((~V[4])|(V[4]&~V[3]&~V[2]));
+endmodule
